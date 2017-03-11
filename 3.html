@@ -1,0 +1,294 @@
+<!--
+Assignment 3.
+A simple side-scrolling game with 1 of three elements
+being an image
+Christopher Williams.
+IT202, SPR 2017, UIC
+2/26/2017
+-->
+<html>
+    <head>
+    <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width">
+        <title>repl.it</title>
+
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+        <style>
+          canvas {background-color: #001E62;z-index:27;}
+        </style>
+    </head>
+        
+    <body>
+        <p id ="lives">Lives: </p>
+        <p id ="livecount">3</p>
+        <p id ="score">Score: </p>
+        <p id ="scorecount">0</p>
+        <canvas width = "500" height = "300" id = "myCanvas2" background.color = "red"></canvas>
+        <img src = "l55250-creeper-minecraft-28135.jpg" width = "25" height= "60" id = "creeper">
+        <script type="text/javascript">
+            // X and y coordinates of 'player'
+            var circleX = 0;
+            var circleY = 100;
+            // Player move speed
+            var pmoveSpeed = 5;
+            // scrolling item move speed - fixed
+            var foemoveSpeed = 3;
+            // Enemy data, makes them appear to be 'lasers'
+            var foeWidth = 20;
+            var foeHeight = 3;
+            // Ally data, makes them appear to be squares
+            var allyWidth = 10;
+            var allyHeight = 10;
+            // Global data for score and lives.
+            // The <p> data is updated using this
+            var globalscore = 0;
+            var globallives = 3;
+            // Player width (rad) and height (yrad)
+            var rad = 25;
+            var yrad = 60;
+            // A timer, for when to increase the number of elements
+            // in the array
+            var count = 0;
+            var addmorefoes = 60;
+            var addmoreallies = 75;
+            // Get canvas data
+            var can = document.getElementById ("myCanvas2");
+            var hei = can.height;
+            // Initial foe /ally
+            var foe = {ene:1, speed:foemoveSpeed, xPos:500,yPos:Math.random()*hei - foeHeight};
+            var ally = {ene:0, speed:foemoveSpeed, xPos:500, yPos: (Math.random()*hei - allyHeight)};
+            // This holds ALL the scolling foes and allies
+            var foes = [foe, ally];
+            // Screen is which screen to show.  0 is intro,
+            // 1 is the game, 2 pause, 3 gameover
+            var screen = 0;
+            document.onkeydown = checkKey;
+            
+            // Intro function & screen.  Move onto next screen with p key
+            function intro()
+            {
+                var can = document.getElementById ("myCanvas2");
+                var ctx = can.getContext("2d");
+                ctx.clearRect(0, 0, can.width, can.height);
+                ctx.font = "30px Times New Roman";
+                ctx.fillText("Creeper game", (can.width/2 - 40),(40));
+                ctx.fillText("Press P start and pause/unpause", (0), (can.height/2));
+                ctx.fillText("Up and down arrows to move", 0, (can.height /4));
+                ctx.fillText("Red beams cost a life", 0, ((can.height / 4) * 3));
+                ctx.fillText("White boxes increase your score", 0, can.height-20);
+                
+            }
+            
+            // Pause screen
+            function pause()
+            {
+                var can = document.getElementById ("myCanvas2");
+                var ctx = can.getContext("2d");
+                ctx.clearRect(0, 0, can.width, can.height);
+                ctx.font = "30px Times New Roman";
+                ctx.fillText("Paused", ((can.width/2)-60),(40));
+                ctx.fillText("Press P to unpause", ((can.width/2)-60), (can.height/2));
+            }
+            
+            // Gameover screen.  'New game' is p button
+            function gameover()
+            {
+                var can = document.getElementById ("myCanvas2");
+                var ctx = can.getContext("2d");
+                ctx.clearRect(0, 0, can.width, can.height);
+                var score = globalscore;
+                ctx.font = "30px Times New Roman";
+                ctx.fillText("Game Over", (can.width/2 - 40),40);
+                var result = "Score: ";
+                result += score;
+                ctx.fillText(result, (can.width/2), (can.height/2));
+                ctx.fillText("Restart: P", (can.width/2 ), (can.height/2 + can.height /4));
+                globalscore = 0;
+                globallives = 3;
+                // Resetting the array.
+                foes = [foe, ally];
+                count = 0;
+            }
+
+            // The main game.  Function name due to re-using lab4 code.
+            function drawcircle()
+            {
+                var can = document.getElementById ("myCanvas2");
+                var ctx = can.getContext("2d");
+                var wid = can.width;
+                var hei = can.height;
+                var val;
+                count++;
+                
+                
+                // Timer check
+                if (count % addmorefoes == 0 && count != 0)
+                {
+                    var foeadd = {ene:1, speed:foemoveSpeed, xPos:500,yPos:(Math.random()*hei - foeHeight)};
+                    foes.push(foeadd);
+                }
+                if (count % addmoreallies == 0 && count != 0)
+                {
+                    var allyadd = {ene:0, speed:foemoveSpeed, xPos:500, yPos: (Math.random()*hei - allyHeight)};
+                    foes.push(allyadd);
+                }
+                
+                // Boundary check - if out of bounds, then reset it to the right, but randomize
+                // the y position
+                for (val of foes)
+                {
+                    if (val.xPos + foeWidth < 0)
+                    {
+                        val.xPos = 500 + (Math.random() * 200)
+                        val.yPos = Math.random() * (hei-allyHeight);
+                    }
+                    
+                }
+                ctx.clearRect(0, 0, wid, hei);
+                ctx.fillStyle = "#FFFFFF";
+                ctx.beginPath();
+                //Setting the image for player
+                var img=document.getElementById("creeper");
+                if(img && img.style) {
+                    img.height = (yrad+'px');
+                    img.width = '25px';
+                }
+                ctx.drawImage(img, circleX, circleY);
+                
+                // Drawing the arry of allies/enemies
+                for (val of foes)
+                {
+                    if (val.ene == 1)
+                    {   
+                        ctx.fillStyle = "RED";
+                        ctx.fillRect(val.xPos, val.yPos, foeWidth, foeHeight);
+                    }
+                    else
+                    {
+                        ctx.fillStyle = "WHITE";
+                        ctx.fillRect(val.xPos, val.yPos, allyWidth, allyHeight);
+                    }
+                    val.xPos -= foemoveSpeed;
+                }
+                
+                // Colision detection on the array
+                for (val of foes)
+                {
+                    if (val.xPos < circleX + rad && val.yPos > circleY && val.yPos < (circleY + yrad))
+                    {
+                        // Enemy - update lives and if at or < 0, set screen to gameover screen
+                        if (val.ene == 1)
+                        {
+                            var livelost = globallives;
+                            console.log(livelost);
+                            if (livelost == null)
+                            {
+                                console.log("livelost null alert!");
+                                livelost = 0;
+                            }
+                            livelost--;
+                            val.xPos = -200;
+                            document.getElementById("livecount").innerHTML = livelost;
+                            globallives = livelost;
+                            if (livelost <= 0)
+                            {
+                                screen = 3;
+                            }
+                        }
+                        // Ally - update score, +1 life if %10 for score
+                        else
+                        {
+                            var score = globalscore;
+                            if (score == null)
+                            {
+                                console.log("score null alert!");
+                                score = 0;
+                            }
+                            score++;
+                            // 10 points, 1 life get.
+                            if (score %10 == 0)
+                            {
+                                globallives++;
+                                document.getElementById("livecount").innerHTML = globallives;
+                            }
+                            val.xPos = -200;
+                            globalscore = score;
+                            document.getElementById("scorecount").innerHTML = score;
+                        }
+                    }
+                }
+                // Draw all those that were added to the screen
+                ctx.fill();
+                
+                //Keep playing
+                if (screen==1)
+                {
+                    requestAnimationFrame(drawcircle);
+                }
+                // Pause called
+                else if (screen ==2)
+                {
+                    requestAnimationFrame(pause);
+                }
+                // Gameover, too bad.
+                else if (screen == 3)
+                {
+                    requestAnimationFrame(gameover);
+                }
+                // An 'oh crud' catcher
+                else 
+                {
+                    console.log ("Got to else in drawcircle!");
+                }
+            }
+            
+            // Key catcher.  up key for move player up
+            // down key for move player down.
+            // P for changing screens, or new game
+            // if at gameover screen
+            function checkKey(e){
+                if (e.key == 'ArrowDown')
+                {
+                    var can = document.getElementById ("myCanvas2");
+                    var dimY = can.height;
+                    if (circleY < (dimY - rad))
+                    {
+                        circleY += pmoveSpeed;
+                    }
+
+                }
+                else if (e.key == 'ArrowUp')
+                {
+                    if (circleY > 0)
+                    {
+                        circleY-= pmoveSpeed;
+                    }
+                    
+                }
+                else if (e.key == 'p')
+                {
+                    if (screen == 1)
+                    {
+                        screen = 2;
+                        requestAnimationFrame(pause);
+                    }
+                    else
+                    {
+                        if (screen == 3)
+                        {
+                            document.getElementById("scorecount").innerHTML = globalscore;
+                            document.getElementById("livecount").innerHTML = globallives;
+                        }
+                        screen = 1;
+                        requestAnimationFrame(drawcircle);
+                    }
+                    
+                }
+                
+            }
+            // And now start at the intro frame.
+            requestAnimationFrame(intro);
+        </script>
+    </body>
+    
+</html>
